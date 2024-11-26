@@ -1,0 +1,181 @@
+#SQL CRIAÇÃO DA VIEW
+CREATE OR REPLACE VIEW view_83 AS
+WITH ranked_data_sftp AS (
+    SELECT 
+        CAST("ID" AS VARCHAR) AS "ID",
+        "Data Inserção",
+        "Tipo Entrega",
+        "Pedido",
+        "Data Nfe",
+        "Serie Nfe",
+        "Número Nfe",
+        "Valor Nfe",
+        "Qtd. Volumes",
+        "Peso",
+        "Remessa",
+        "Nome Destinatário",
+        "Endereço Completo",
+        "CEP",
+        "Cód. CD",
+        "CD",
+        "CNPJ/CPF Dest.",
+        "Transportador",
+        "Lead Time",
+        "Data Prev. Entrega",
+        "Status Prazo",
+        "ID Últ. Ocr.",
+        "Última Ocorrência",
+        "Chave Últ. Ocr.",
+        "Data Última Ocr.",
+        "Agrupador",
+        "Endereço",
+        "Numero",
+        "Bairro",
+        "Cidades",
+        "UF",
+        "Etiquetas",
+        "Chegada na Transportadora",
+        "Código Vendedor",
+        "Chave NFe",
+        ROW_NUMBER() OVER (
+            PARTITION BY "Pedido", "Remessa" 
+            ORDER BY 
+            CASE 
+                WHEN "Data Última Ocr." ~ '^\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$' 
+                THEN TO_TIMESTAMP("Data Última Ocr.", 'DD/MM/YYYY HH24:MI:SS')
+                ELSE NULL
+            END DESC
+        ) AS rn
+    FROM "83_sftp"
+),
+ranked_data_excel AS (
+    SELECT 
+        CAST("id" AS VARCHAR) AS "ID",
+        "Data Inserção",
+        "Tipo Entrega",
+        "pedido" AS "Pedido",
+        "Data Nfe",
+        "Serie Nfe",
+        "Número Nfe",
+        "Valor Nfe",
+        "Qtd. Volumes",
+        "peso" AS "Peso",
+        "remessa" AS "Remessa",
+        "Nome Destinatário",
+        "Endereço Completo",
+        "cep" AS "CEP",
+        "Cód. CD",
+        "cd" AS "CD",
+        "CNPJ/CPF Dest.",
+        "transportador" AS "Transportador",
+        "Lead Time",
+        "Data Prev. Entrega",
+        "Status Prazo",
+        "ID Últ. Ocr.",
+        "Última Ocorrência",
+        "Chave Últ. Ocr.",
+        "Data Última Ocr.",
+        "agrupador" AS "Agrupador",
+        "endereço" AS "Endereço",
+        "numero" AS "Numero",
+        "bairro" AS "Bairro",
+        "cidades" AS "Cidades",
+        "uf" AS "UF",
+        "etiquetas" AS "Etiquetas",
+        "Chegada na Transportadora",
+        "Código Vendedor",
+        "Chave NFe",
+        ROW_NUMBER() OVER (
+            PARTITION BY "pedido", "remessa" 
+            ORDER BY 
+            CASE 
+                WHEN "Data Última Ocr." ~ '^\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$' 
+                THEN TO_TIMESTAMP("Data Última Ocr.", 'DD/MM/YYYY HH24:MI:SS')
+                ELSE NULL
+            END DESC
+        ) AS rn
+    FROM "83_excel"
+)
+SELECT 
+    "ID",
+    "Data Inserção",
+    "Tipo Entrega",
+    "Pedido",
+    "Data Nfe",
+    "Serie Nfe",
+    "Número Nfe",
+    "Valor Nfe",
+    "Qtd. Volumes",
+    "Peso",
+    "Remessa",
+    "Nome Destinatário",
+    "Endereço Completo",
+    "CEP",
+    "Cód. CD",
+    "CD",
+    "CNPJ/CPF Dest.",
+    "Transportador",
+    "Lead Time",
+    "Data Prev. Entrega",
+    "Status Prazo",
+    "ID Últ. Ocr.",
+    "Última Ocorrência",
+    "Chave Últ. Ocr.",
+    "Data Última Ocr.",
+    "Agrupador",
+    "Endereço",
+    "Numero",
+    "Bairro",
+    "Cidades",
+    "UF",
+    "Etiquetas",
+    "Chegada na Transportadora",
+    "Código Vendedor",
+    "Chave NFe"
+FROM ranked_data_sftp 
+WHERE rn = 1
+UNION ALL
+SELECT 
+    "ID",
+    "Data Inserção",
+    "Tipo Entrega",
+    "Pedido",
+    "Data Nfe",
+    "Serie Nfe",
+    "Número Nfe",
+    "Valor Nfe",
+    "Qtd. Volumes",
+    "Peso",
+    "Remessa",
+    "Nome Destinatário",
+    "Endereço Completo",
+    "CEP",
+    "Cód. CD",
+    "CD",
+    "CNPJ/CPF Dest.",
+    "Transportador",
+    "Lead Time",
+    "Data Prev. Entrega",
+    "Status Prazo",
+    "ID Últ. Ocr.",
+    "Última Ocorrência",
+    "Chave Últ. Ocr.",
+    "Data Última Ocr.",
+    "Agrupador",
+    "Endereço",
+    "Numero",
+    "Bairro",
+    "Cidades",
+    "UF",
+    "Etiquetas",
+    "Chegada na Transportadora",
+    "Código Vendedor",
+    "Chave NFe"
+FROM ranked_data_excel 
+WHERE rn = 1
+AND NOT EXISTS (
+    SELECT 1 
+    FROM ranked_data_sftp s
+    WHERE s."Pedido" = ranked_data_excel."Pedido"
+    AND s."Remessa" = ranked_data_excel."Remessa"
+);
